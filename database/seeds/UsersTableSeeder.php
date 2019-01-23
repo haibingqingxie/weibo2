@@ -15,9 +15,10 @@ class UsersTableSeeder extends Seeder
         $users = factory(User::class)->times(50)->make();
         User::insert($users->makeVisible(['password', 'remember_token'])->toArray());
 
-        $user = User::first();
+        $user = User::find(1);
         $user->name = 'Jason Li';
         $user->email = 'jasonli@seasidecrab.com';
+        $user->is_admin = true;
         $user->save();
     }
 }
