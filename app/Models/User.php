@@ -45,6 +45,7 @@ class User extends Authenticatable
         return "https://www.gravatar.com/avatar/$hash?s=$size";
     }
 
+    // 用户微博关联关系
     public function statuses()
     {
         return $this->hasMany(Status::class);
@@ -55,5 +56,44 @@ class User extends Authenticatable
     {
         return $this->statuses()
                     ->orderBy('created_at', 'desc');
+    }
+
+    // 用户粉丝关联关系
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'followers', 'user_id', 'follower_id');
+    }
+
+    // 用户关注人关联关系
+    public function followings()
+    {
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'user_id');
+    }
+
+    // 关注用户
+    public function follow($user_ids)
+    {
+        if ( ! is_array($user_ids)) {
+            $user_ids = compact('user_ids');
+        }
+
+        $this->followings()->sync($user_ids, false);
+
+    }
+
+    // 取关用户
+    public function unfollow($user_ids)
+    {
+        if ( ! is_array($user_ids)) {
+            $user_ids = compact('user_ids');
+        }
+
+        $this->followings()->detach($user_ids);
+    }
+
+    // 是否关注
+    public function isFollowing($user_id)
+    {
+        return $this->followings()->contains($user_id);
     }
 }
