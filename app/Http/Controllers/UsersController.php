@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 
 use Auth;
+use Mail;
 
 class UsersController extends Controller
 {
@@ -14,7 +15,7 @@ class UsersController extends Controller
         // 中间件auth过滤请求，except->除了*意外，都需要验证
         // 我觉得只有登录后才能查看用户列表和用户个人页面，show,index不应该放在例外中
         $this->middleware('auth', [
-            'except' => ['show', 'create', 'store', 'index']
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
         ]);
         // 中间件guest过滤请求，only->只允许*访问
         $this->middleware('guest', [
@@ -56,9 +57,14 @@ class UsersController extends Controller
             'password' => bcrypt($request->password)
         ]);
 
-        Auth::login($user);
-        session()->flash('success', '欢迎，您将在这里开启一段新的旅程~');
-        return redirect()->route('users.show', [$user->id]);
+        // Auth::login($user);
+        // session()->flash('success', '欢迎，您将在这里开启一段新的旅程~');
+        // return redirect()->route('users.show', [$user->id]);
+
+        // 邮箱激活账号
+        $this->sendEmailValidationTo($user);
+        session()->flash('success', '验证邮件已发送到你的注册邮箱上，请注意查收。');
+        return redirect('/');
     }
 
     // 修改用户页面
@@ -97,5 +103,33 @@ class UsersController extends Controller
 
         session()->flash('success', '删除用户成功！');
         return back();
+    }
+
+    // 发送邮件
+    protected function sendEmailValidationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'jasonli@seasidecrab.com';
+        $name = 'Jason Li';
+        $to = $user->email;
+        $subject = '感谢注册 Weibo App 应用，请确认你的邮箱。';
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
+    }
+
+    // 确认邮件
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        Auth::login($user);
+        session()->flash('success', '恭喜你，激活成功！');
+        return redirect()->route('users.show', $user->id);
     }
 }
