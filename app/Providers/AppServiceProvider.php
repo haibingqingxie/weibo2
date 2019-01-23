@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Carbon::setlocale('zh-CN');
+        Carbon::setlocale('zh');
     }
 
     /**
