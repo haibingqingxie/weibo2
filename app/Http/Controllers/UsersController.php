@@ -12,13 +12,21 @@ class UsersController extends Controller
     public function __construct()
     {
         // 中间件auth过滤请求，except->除了*意外，都需要验证
+        // 我觉得只有登录后才能查看用户列表和用户个人页面，show,index不应该放在例外中
         $this->middleware('auth', [
-            'except' => ['show', 'create', 'store']
+            'except' => ['show', 'create', 'store', 'index']
         ]);
         // 中间件guest过滤请求，only->只允许*访问
         $this->middleware('guest', [
             'only' => ['create']
         ]);
+    }
+
+    // 用户列表
+    public function index()
+    {
+        $users = User::paginate(10);
+        return view('users.index', compact('users'));
     }
 
     // 注册用户
